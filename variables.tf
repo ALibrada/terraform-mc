@@ -8,12 +8,6 @@ variable "your_public_key" {
   description = "This will be in ~/.ssh/id_rsa.pub by default."
 }
 
-variable "mojang_server_url" {
-  type        = string
-  description = "Copy the server download link from here https://www.minecraft.net/en-us/download/server/."
-  default     = "https://launcher.mojang.com/v1/objects/c8f83c5655308435b3dcf03c06d9fe8740a77469/server.jar"
-}
-
 variable "aws_access_key" {
   type = string
 }
@@ -26,4 +20,36 @@ variable "mc_root" {
   description = "Where to install minecraft on your instance"
   type        = string
   default     = "/home/minecraft"
+}
+
+variable "mc_version" {
+  description = "Which version of minecraft to install"
+  type        = string
+  default     = "latest"
+}
+
+variable "mc_type" {
+  description = "Type of minecraft distribution - snapshot or release"
+  type        = string
+  default     = "release"
+}
+
+variable "mc_backup_freq" {
+  description = "How often (mins) to sync to S3"
+  type        = number
+  default     = 5
+}
+
+
+// You'll want to tune these next two based on the instance type
+variable "java_ms_mem" {
+  description = "Java initial and minimum heap size"
+  type        = string
+  default     = "1G"
+}
+
+variable "java_mx_mem" {
+  description = "Java maximum heap size"
+  type        = string
+  default     = "1G"
 }
