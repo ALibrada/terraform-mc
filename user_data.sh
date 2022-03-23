@@ -62,6 +62,7 @@ download_minecraft_server() {
 }
 
 MINECRAFT_JAR="minecraft_server.jar"
+amazon_linux_setup
 
 # Create mc dir, sync S3 to it and download mc if not already there (from S3)
 /bin/mkdir -p ${mc_root}
