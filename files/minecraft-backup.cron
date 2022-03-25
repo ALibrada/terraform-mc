@@ -1,0 +1,4 @@
+/etc/cron.d/minecraft-backup
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+*/${mc_backup_freq} * * * *  $SSH_USER /home/$SSH_USER/backup.sh -c -i ${mc_root}/world -r $RESTIC_REPOSITORY -s localhost:25575:secret -w rcon

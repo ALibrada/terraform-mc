@@ -9,7 +9,7 @@ terraform {
 
 provider "aws" {
   profile    = "private"
-  region     = var.your_region
+  region     = var.aws_region
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
 }
@@ -82,24 +82,17 @@ resource "aws_s3_bucket_versioning" "minecraft-bucket_versioning" {
   }
 }
 
+data "template_file" "instance-policy" {
+  template = file("./policies/instance-policy.json")
+  vars = {
+    mc_bucket = local.bucket
+  }
+}
+
 // IAM role for S3 access
 resource "aws_iam_role" "allow_s3" {
   name               = "${local.name}-allow-ec2-to-s3"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "ec2.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
+  assume_role_policy = file("./policies/instance-role.json")
 }
 
 resource "aws_iam_instance_profile" "mc" {
@@ -110,27 +103,7 @@ resource "aws_iam_instance_profile" "mc" {
 resource "aws_iam_role_policy" "mc_allow_ec2_to_s3" {
   name   = "${local.name}-allow-ec2-to-s3"
   role   = aws_iam_role.allow_s3.id
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": ["s3:ListBucket"],
-      "Resource": ["arn:aws:s3:::${local.bucket}"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": ["arn:aws:s3:::${local.bucket}/*"]
-    }
-  ]
-}
-EOF
+  policy = data.template_file.instance-policy.rendered
 }
 
 resource "aws_key_pair" "home" {
@@ -139,17 +112,37 @@ resource "aws_key_pair" "home" {
   tags       = local.tf_tags
 }
 
-data "template_file" "user_data" {
-  template = file("${path.module}/user_data.sh")
-
+data "template_file" "service" {
+  template = file("./files/minecraft.service")
   vars = {
-    mc_root        = var.mc_root
-    java_mx_mem    = var.java_mx_mem
-    java_ms_mem    = var.java_ms_mem
-    mc_version     = var.mc_version
-    mc_type        = var.mc_type
-    mc_bucket      = local.bucket
+    mc_root     = var.mc_root
+    java_mx_mem = var.java_mx_mem
+    java_ms_mem = var.java_ms_mem
+  }
+}
+
+data "template_file" "cron" {
+  template = file("./files/minecraft-backup.cron")
+  vars = {
     mc_backup_freq = var.mc_backup_freq
+    mc_root        = var.mc_root
+  }
+}
+
+module "minecraft_version" {
+  source            = "github.com/ALibrada/terraform-minecraft-version.git?ref=main"
+  minecraft_version = var.mc_version
+}
+
+data "template_file" "user_data" {
+  template = file("./cloud-init.yaml")
+  vars = {
+    minecraft-service = base64encode(data.template_file.service.rendered)
+    minecraft-cron    = base64encode(data.template_file.cron.rendered)
+    mc_root           = var.mc_root
+    server_url        = module.minecraft_version.download_link
+    mc_bucket         = local.bucket
+    aws_region        = var.aws_region
   }
 }
 
@@ -176,4 +169,8 @@ resource "aws_instance" "minecraft" {
 
 output "instance_ip_addr" {
   value = aws_instance.minecraft.public_ip
+}
+
+output "test" {
+  value = data.template_file.user_data.rendered
 }

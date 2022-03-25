@@ -1,4 +1,4 @@
-variable "your_region" {
+variable "aws_region" {
   type        = string
   description = "Where you want your server to be. The options are here https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html."
 }
@@ -37,9 +37,8 @@ variable "mc_type" {
 variable "mc_backup_freq" {
   description = "How often (mins) to sync to S3"
   type        = number
-  default     = 5
+  default     = 30
 }
-
 
 // You'll want to tune these next two based on the instance type
 variable "java_ms_mem" {
