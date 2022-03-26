@@ -37,6 +37,11 @@ write_files:
     append: true
 
 runcmd:
+  - export SSH_USER="ec2-user"
+  - export MINECRAFT_JAR="minecraft-server.jar"
+  - export RESTIC_REPOSITORY="s3:s3.${aws_region}.amazonaws.com/${mc_bucket}/restic"
+  - export RESTIC_PASSWORD="${restic_password}"
+  - export AWS_DEFAULT_REGION="${aws_region}"
   - wget -O /home/$SSH_USER/backup.sh https://github.com/nicolaschan/minecraft-backup/releases/latest/download/backup.sh
   - chmod +x /home/$SSH_USER/backup.sh
   - [
@@ -54,11 +59,10 @@ runcmd:
   - service yum-cron start
   - yum upgrade -y
   - curl -L https://github.com/restic/restic/releases/download/v0.12.1/restic_0.12.1_linux_amd64.bz2 | bunzip2 > /usr/bin/restic
-  - chmod 750 /usr/bin/restic
+  - chmod 755 /usr/bin/restic
   - restic init
   - systemctl enable minecraft
   - mkdir -p ${mc_root}
   - wget -O ${mc_root}/$MINECRAFT_JAR ${server_url}
-  - sleep 5
   - chown -R $SSH_USER ${mc_root}
   - systemctl start minecraft

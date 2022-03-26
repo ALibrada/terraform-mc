@@ -3,7 +3,7 @@ Description=Minecraft Server
 After=network.target
 [Service]
 Type=simple
-User=$SSH_USER
+User=ec2-user
 WorkingDirectory=${mc_root}
 ExecStart=/usr/bin/java -Xmx${java_mx_mem} -Xms${java_ms_mem} -jar minecraft-server.jar nogui
 Restart=on-abort
