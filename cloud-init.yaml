@@ -32,7 +32,7 @@ write_files:
       SSH_USER="ec2-user"
       MINECRAFT_JAR="minecraft-server.jar"
       RESTIC_REPOSITORY="s3:s3.${aws_region}.amazonaws.com/${mc_bucket}/restic"
-      RESTIC_PASSWORD="restic"
+      RESTIC_PASSWORD="${restic_password}"
       AWS_DEFAULT_REGION="${aws_region}"
     append: true
 

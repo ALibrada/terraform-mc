@@ -134,6 +134,12 @@ module "minecraft_version" {
   minecraft_version = var.mc_version
 }
 
+resource "random_string" "restic" {
+  length  = 12
+  special = false
+  upper   = false
+}
+
 data "template_file" "user_data" {
   template = file("./cloud-init.yaml")
   vars = {
@@ -143,6 +149,7 @@ data "template_file" "user_data" {
     server_url        = module.minecraft_version.download_link
     mc_bucket         = local.bucket
     aws_region        = var.aws_region
+    restic_password   = random_string.restic.result
   }
 }
 
