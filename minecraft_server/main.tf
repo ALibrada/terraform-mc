@@ -1,14 +1,8 @@
 data "aws_caller_identity" "aws" {}
-
-// S3 bucket for persisting minecraft
-resource "random_string" "name" {
-  length  = 12
-  special = false
-  upper   = false
-}
+data "aws_region" "current" {}
 
 locals {
-  name = "${var.name}-${random_string.name.result}"
+  name = var.name
   tf_tags = {
     Name      = "Minecraft - ${var.name}"
     Terraform = true,
@@ -45,8 +39,15 @@ resource "aws_security_group" "minecraft" {
   tags = local.tf_tags
 }
 
+// S3 bucket for persisting minecraft
+resource "random_string" "name" {
+  length  = 12
+  special = false
+  upper   = false
+}
+
 locals {
-  bucket = "${local.name}-bucket"
+  bucket = "${local.name}-${random_string.name.result}"
 }
 
 resource "aws_s3_bucket" "minecraft-backup" {
@@ -91,7 +92,7 @@ resource "aws_iam_role_policy" "mc_allow_ec2_to_s3" {
 }
 
 resource "aws_key_pair" "home" {
-  key_name   = "Home-${var.name}"
+  key_name   = "Home"
   public_key = var.your_public_key
   tags       = local.tf_tags
 }
@@ -127,13 +128,13 @@ resource "random_string" "restic" {
 data "template_file" "user_data" {
   template = file("${path.module}/cloud-init.yaml")
   vars = {
-    minecraft-service = base64encode(data.template_file.service.rendered)
-    minecraft-cron    = base64encode(data.template_file.cron.rendered)
-    mc_root           = var.mc_root
-    server_url        = module.minecraft_version.download_link
-    mc_bucket         = local.bucket
-    aws_region        = var.aws_region
-    restic_password   = random_string.restic.result
+    minecraft-service           = base64encode(data.template_file.service.rendered)
+    minecraft-cron              = base64encode(data.template_file.cron.rendered)
+    mc_root                     = var.mc_root
+    server_url                  = module.minecraft_version.download_link
+    bucket_regional_domain_name = aws_s3_bucket.minecraft-backup.bucket_regional_domain_name
+    aws_region                  = data.aws_region.current.name
+    restic_password             = random_string.restic.result
   }
 }
 
@@ -156,12 +157,4 @@ resource "aws_instance" "minecraft" {
   user_data                   = data.template_file.user_data.rendered
   iam_instance_profile        = aws_iam_instance_profile.mc.id
   tags                        = local.tf_tags
-}
-
-output "instance_ip_addr" {
-  value = aws_instance.minecraft.public_ip
-}
-
-output "test" {
-  value = data.template_file.user_data.rendered
 }

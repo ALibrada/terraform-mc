@@ -9,5 +9,4 @@ module "minecraft_server" {
   source          = "./minecraft_server"
   name            = "libradacraft"
   your_public_key = var.your_public_key
-  aws_region      = var.aws_region
 }
