@@ -158,3 +158,8 @@ resource "aws_instance" "minecraft" {
   iam_instance_profile        = aws_iam_instance_profile.mc.id
   tags                        = local.tf_tags
 }
+
+module "start_lambda" {
+  source       = "../ec-lambda"
+  instance_arn = aws_instance.minecraft.arn
+}
